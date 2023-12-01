@@ -17,6 +17,7 @@ import {
   http,
   Hex,
   getAddress,
+  defineChain,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { goerli } from "viem/chains";
@@ -24,23 +25,70 @@ import { goerli } from "viem/chains";
 dotenv.config({ override: true });
 
 console.log("Hello world!");
+const chainName = "parallel-l3-testnet";
+const chain = defineChain({
+  id: 3163830386846714,
+  network: chainName,
+  name: chainName,
+  nativeCurrency: { name: `${chainName} Ether`, symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    public: {
+      http: ["https://nitrorpc-compact-lime-moose-5r7g6fkl78.t.conduit.xyz"],
+      webSocket: ["wss://nitrows-compact-lime-moose-5r7g6fkl78.t.conduit.xyz"],
+    },
+    default: {
+      http: ["https://nitrorpc-compact-lime-moose-5r7g6fkl78.t.conduit.xyz"],
+      webSocket: ["wss://nitrows-compact-lime-moose-5r7g6fkl78.t.conduit.xyz"],
+    },
+  },
+  blockExplorers: {
+    etherscan: {
+      name: "Etherscan",
+      url: "https://goerli.etherscan.io",
+    },
+    default: {
+      name: "Etherscan",
+      url: "https://goerli.etherscan.io",
+    },
+  },
+  contracts: {
+    ensRegistry: {
+      address: "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+    },
+    ensUniversalResolver: {
+      address: "0x56522D00C410a43BFfDF00a9A569489297385790",
+      blockCreated: 8765204,
+    },
+    multicall3: {
+      address: "0xca11bde05977b3631167028862be2a173976ca11",
+      blockCreated: 6507670,
+    },
+  },
+  testnet: true,
+});
+const aa = `0x955E79CB7cD74099C6A4BC2E86cCa312C1369BC3`;
+const ENTRY_POINT_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
+// CREATE THE CLIENTS
+const publicClient = createPublicClient({
+  transport: http("https://nitrorpc-compact-lime-moose-5r7g6fkl78.t.conduit.xyz"),
+  chain,
+});
 
-const chain = goerli; // find the list of chain names on the Pimlico verifying paymaster reference page
-const chainName = "goerli"; // find the list of chain names on the Pimlico verifying paymaster reference page
+// const chain = goerli; // find the list of chain names on the Pimlico verifying paymaster reference page
+// const chainName = "goerli"; // find the list of chain names on the Pimlico verifying paymaster reference page
+// const aa = `0x8F77b64181feC4194711615A839D49E83614b4d6`;
+// const ENTRY_POINT_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
+// const publicClient = createPublicClient({
+//   transport: http("https://rpc.ankr.com/eth_goerli"),
+//   chain,
+// });
+
 const apiKey = process.env.PIMLICO_API_KEY; // REPLACE THIS
-
-const aa = `0x8F77b64181feC4194711615A839D49E83614b4d6`;
 const privateKey = process.env.PRIVATE_KEY || "";
 console.log("privateKey", privateKey);
 const owner = privateKeyToAccount(privateKey as Hex);
 
 const sender = getAddress(aa, chain.id);
-
-// CREATE THE CLIENTS
-const publicClient = createPublicClient({
-  transport: http("https://rpc.ankr.com/eth_goerli"),
-  chain,
-});
 
 const bundlerClient = createClient({
   transport: http(
@@ -58,9 +106,6 @@ const paymasterClient = createClient({
   ),
   chain,
 }).extend(pimlicoPaymasterActions);
-
-// CALCULATE THE SENDER ADDRESS
-const ENTRY_POINT_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789";
 
 // GENERATE THE CALLDATA
 const to = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // vitalik
@@ -92,7 +137,7 @@ const gasPrice = await bundlerClient.getUserOperationGasPrice();
 // NOTICE: get nonce from entryPoint contract
 const nonce = await getAccountNonce(publicClient, {
   entryPoint: ENTRY_POINT_ADDRESS,
-  sender: aa as Hex
+  sender: aa as Hex,
 });
 
 console.log(nonce);
